@@ -13,14 +13,53 @@ enum Role {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String       @id @default(cuid())
   name          String
-  email         String?   @unique
-  nik           String?   @unique
+  email         String?      @unique
+  nik           String?      @unique
   password      String
-  role          Role      @default(SISWA)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  role          Role         @default(SISWA)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
-  // Relasi akan ditambahkan saat tahap Biodata & Ujian
+  nilaiUjian    NilaiUjian[]
+}
+
+model Bab {
+  id            String       @id @default(cuid())
+  title         String       // Misalnya: "Bab 1: Hiragana & Katakana"
+  description   String?
+  order         Int          // Urutan bab untuk unlock (1, 2, 3...)
+  createdAt     DateTime     @default(now())
+  
+  soal          Soal[]
+  nilaiUjian    NilaiUjian[]
+}
+
+model Soal {
+  id            String   @id @default(cuid())
+  babId         String
+  questionText  String   @db.Text
+  optionA       String
+  optionB       String
+  optionC       String
+  optionD       String
+  correctOption String   // "A", "B", "C", atau "D"
+  createdAt     DateTime @default(now())
+  
+  bab           Bab      @relation(fields: [babId], references: [id], onDelete: Cascade)
+}
+
+model NilaiUjian {
+  id            String   @id @default(cuid())
+  userId        String
+  babId         String
+  score         Int      // Nilai dari 0 - 100
+  isPassed      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bab           Bab      @relation(fields: [babId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, babId]) // Siswa hanya punya 1 nilai per bab (bisa diupdate jika remidi)
 }
