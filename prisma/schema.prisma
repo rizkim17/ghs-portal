@@ -23,6 +23,7 @@ model User {
   updatedAt     DateTime     @updatedAt
 
   nilaiUjian    NilaiUjian[]
+  biodata       Biodata?
 }
 
 model Bab {
@@ -62,4 +63,27 @@ model NilaiUjian {
   bab           Bab      @relation(fields: [babId], references: [id], onDelete: Cascade)
   
   @@unique([userId, babId]) // Siswa hanya punya 1 nilai per bab (bisa diupdate jika remidi)
+}
+
+model Biodata {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  fullNameKanji    String?
+  fullNameKatakana String?
+  placeOfBirth     String?
+  dateOfBirth      DateTime?
+  gender           String?  // "L" / "P"
+  bloodType        String?
+  height           Int?
+  weight           Int?
+  address          String?  @db.Text
+  phone            String?
+  
+  educationHistory Json?    // Array of { level, schoolName, startYear, endYear }
+  workExperience   Json?    // Array of { companyName, position, startYear, endYear }
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

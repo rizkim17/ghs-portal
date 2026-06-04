@@ -1,6 +1,10 @@
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
-export default function Navbar() {
+export default async function Navbar() {
+  const session = await getServerSession(authOptions);
+
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm">
       <div className="max-w-7xl mx-auto px-6 sm:px-12">
@@ -30,18 +34,29 @@ export default function Navbar() {
 
           {/* Call to Action */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link 
-              href="/login" 
-              className="text-primary font-medium hover:text-primary-hover transition-colors px-4 py-2"
-            >
-              Masuk
-            </Link>
-            <Link 
-              href="/register" 
-              className="bg-primary text-white px-6 py-2.5 rounded-xl font-medium hover:bg-primary-hover hover-lift shadow-soft transition-all"
-            >
-              Daftar
-            </Link>
+            {session ? (
+              <Link 
+                href="/dashboard" 
+                className="bg-primary text-white px-6 py-2.5 rounded-xl font-medium hover:bg-primary-hover hover-lift shadow-soft transition-all"
+              >
+                Ke Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link 
+                  href="/login" 
+                  className="text-primary font-medium hover:text-primary-hover transition-colors px-4 py-2"
+                >
+                  Masuk
+                </Link>
+                <Link 
+                  href="/register" 
+                  className="bg-primary text-white px-6 py-2.5 rounded-xl font-medium hover:bg-primary-hover hover-lift shadow-soft transition-all"
+                >
+                  Daftar
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button (placeholder) */}

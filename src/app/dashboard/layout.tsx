@@ -35,10 +35,13 @@ export default async function DashboardLayout({
           {(role === "ADMIN" || role === "GURU") && (
             <>
               <div className="pt-4 pb-2">
-                <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Menu Pengajar</p>
+                <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Menu Pengajar & Admin</p>
               </div>
               <Link href="/dashboard/admin/bank-soal" className="block px-4 py-3 rounded-xl hover:bg-primary/5 text-gray-700 hover:text-primary transition-colors font-medium">
                 Manajemen Ujian
+              </Link>
+              <Link href="/dashboard/admin/cv" className="block px-4 py-3 rounded-xl hover:bg-primary/5 text-gray-700 hover:text-primary transition-colors font-medium">
+                Data CV Siswa
               </Link>
             </>
           )}
