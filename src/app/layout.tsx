@@ -12,9 +12,6 @@ export const metadata: Metadata = {
   description: "Website resmi dan portal siswa LPK GHS untuk program magang Jepang, Tokutei Ginou, dan pelatihan bahasa.",
 };
 
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -23,9 +20,7 @@ export default function RootLayout({
   return (
     <html lang="id" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-surface">
-        <Navbar />
         {children}
-        <Footer />
       </body>
     </html>
   );
