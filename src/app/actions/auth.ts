@@ -41,8 +41,9 @@ export async function registerUser(formData: FormData) {
     });
 
     return { success: true };
-  } catch (error) {
-    console.error(error);
-    return { error: "Terjadi kesalahan saat mendaftar" };
+  } catch (error: any) {
+    console.error("Register error:", error?.message || error);
+    console.error("Full error:", JSON.stringify(error, null, 2));
+    return { error: `Terjadi kesalahan saat mendaftar: ${error?.message || "Unknown error"}` };
   }
 }
