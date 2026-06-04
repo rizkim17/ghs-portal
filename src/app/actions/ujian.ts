@@ -74,7 +74,7 @@ export async function deleteSoal(soalId: string, babId: string) {
 export async function submitExam(babId: string, userId: string, answers: Record<string, string>) {
   // 1. Ambil jawaban benar dari database untuk soal-soal yang diujikan
   const soalIds = Object.keys(answers);
-  if (soalIds.length === 0) return { score: 0, passed: false };
+  if (soalIds.length === 0) return { score: 0, isPassed: false, correctCount: 0, totalSoal: 0 };
 
   const soalDb = await prisma.soal.findMany({
     where: { id: { in: soalIds } },
