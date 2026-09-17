@@ -1,9 +1,11 @@
 import { requireRole } from '@/lib/auth-guard';
 import { prisma } from '@/lib/prisma';
 import { createBab } from '@/actions/bab';
-import { EXAM_TYPE_LABELS, SSW_SECTOR_LABELS } from '@/constants/exam';
+import { EXAM_TYPE_LABELS, SSW_SECTOR_LABELS, PUBLISH_STATUS_LABELS, PUBLISH_STATUS_COLORS } from '@/constants/exam';
 import Link from 'next/link';
 import DeleteBabButton from '@/components/admin/DeleteBabButton';
+import EditBabModal from '@/components/admin/EditBabModal';
+import EditPelajaranModal from '@/components/admin/EditPelajaranModal';
 
 export default async function BabUjianPage({ params }: { params: Promise<{ pelajaranId: string }> }) {
   await requireRole('SUPERADMIN', 'GURU');
@@ -33,13 +35,31 @@ export default async function BabUjianPage({ params }: { params: Promise<{ pelaj
         <Link href="/dashboard/admin/bank-soal" className="text-primary hover:underline mb-2 inline-flex items-center gap-1 text-sm font-medium">
           &larr; Kembali ke Bank Soal
         </Link>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            {pelajaran.name}
-          </h1>
-          <span className="text-xs font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full">
-            {EXAM_TYPE_LABELS[pelajaran.type] || pelajaran.type}
-          </span>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+              {pelajaran.name}
+            </h1>
+            <span className="text-xs font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full">
+              {EXAM_TYPE_LABELS[pelajaran.type] || pelajaran.type}
+            </span>
+            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${PUBLISH_STATUS_COLORS[pelajaran.status]}`}>
+              {PUBLISH_STATUS_LABELS[pelajaran.status]}
+            </span>
+          </div>
+
+          <div>
+            <EditPelajaranModal
+              buttonStyle="button"
+              pelajaran={{
+                id: pelajaran.id,
+                name: pelajaran.name,
+                description: pelajaran.description,
+                status: pelajaran.status as any,
+                order: pelajaran.order,
+              }}
+            />
+          </div>
         </div>
         {pelajaran.description && <p className="text-sm sm:text-base text-gray-500 mt-1">{pelajaran.description}</p>}
       </div>
@@ -48,19 +68,23 @@ export default async function BabUjianPage({ params }: { params: Promise<{ pelaj
         {/* Form Tambah Bab */}
         <div className="lg:col-span-1">
           <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm sticky top-6">
-            <h2 className="text-lg font-bold mb-4 text-gray-900">Tambah Baru</h2>
+            <h2 className="text-lg font-bold mb-4 text-gray-900">
+              Tambah {pelajaran.type === 'BAB' ? 'Bab' : 'Ujian'} Baru
+            </h2>
             <form action={createBab} className="space-y-4">
               <input type="hidden" name="pelajaranId" value={pelajaran.id} />
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Judul / Nama Ujian *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Judul / Nama {pelajaran.type === 'BAB' ? 'Bab' : 'Ujian'} *
+                </label>
                 <input type="text" name="title" required className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:border-primary focus:ring-primary" placeholder={pelajaran.type === 'JFT' ? 'JFT 2026' : 'Bab 1'} />
               </div>
 
               {pelajaran.type === 'SSW' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Sektor SSW *</label>
-                  <select name="sswSector" required className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:border-primary focus:ring-primary">
+                  <select name="sswSector" required className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:border-primary focus:ring-primary bg-white">
                     {Object.entries(SSW_SECTOR_LABELS).map(([val, label]) => (
                       <option key={val} value={val}>{label}</option>
                     ))}
@@ -117,9 +141,14 @@ export default async function BabUjianPage({ params }: { params: Promise<{ pelaj
             pelajaran.babs.map((bab, index) => (
               <div key={bab.id} className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded">#{bab.order ?? (index + 1)}</span>
                     <h3 className="font-bold text-base sm:text-lg text-gray-900 truncate">{bab.title}</h3>
+                    {bab.status && (
+                      <span className={`text-[10px] px-2 py-0.2 rounded-full font-semibold ${PUBLISH_STATUS_COLORS[bab.status]}`}>
+                        {PUBLISH_STATUS_LABELS[bab.status]}
+                      </span>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-gray-500">
                     <span className="flex items-center gap-1">
@@ -137,13 +166,31 @@ export default async function BabUjianPage({ params }: { params: Promise<{ pelaj
                         {bab.durationMinutes}m
                       </span>
                     )}
+                    <span className="text-gray-400">
+                      Passing: {bab.passingScore}/{bab.maxScore}
+                    </span>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
+                <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0 flex-wrap justify-end">
+                  <EditBabModal
+                    bab={{
+                      id: bab.id,
+                      title: bab.title,
+                      description: bab.description,
+                      order: bab.order,
+                      maxSoalShown: bab.maxSoalShown,
+                      durationMinutes: bab.durationMinutes,
+                      passingScore: bab.passingScore,
+                      maxScore: bab.maxScore,
+                      sswSector: bab.sswSector,
+                      status: bab.status as any,
+                    }}
+                    pelajaranType={pelajaran.type}
+                  />
                   <Link 
                     href={`/dashboard/admin/bank-soal/${pelajaran.id}/${bab.id}`}
-                    className="flex-1 sm:flex-none text-center px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-xl text-xs font-semibold transition-colors"
+                    className="flex-1 sm:flex-none text-center px-3.5 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-xl text-xs font-semibold transition-colors"
                   >
                     Kelola Soal &rarr;
                   </Link>

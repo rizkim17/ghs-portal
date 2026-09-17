@@ -4,6 +4,7 @@ import { createSoal } from '@/actions/soal';
 import { SECTION_TYPE_LABELS } from '@/constants/exam';
 import Link from 'next/link';
 import DeleteSoalButton from '@/components/admin/DeleteSoalButton';
+import EditSoalModal from '@/components/admin/EditSoalModal';
 
 export default async function KelolaSoalPage({ params }: { params: Promise<{ pelajaranId: string; babId: string }> }) {
   await requireRole('SUPERADMIN', 'GURU');
@@ -142,7 +143,7 @@ export default async function KelolaSoalPage({ params }: { params: Promise<{ pel
                     </h3>
                     <div className="space-y-4">
                       {sectionSoals.map((soal, index) => (
-                        <SoalCard key={soal.id} soal={soal} index={index + 1} babId={bab.id} />
+                        <SoalCard key={soal.id} soal={soal} index={index + 1} babId={bab.id} pelajaranType={pelajaran.type} />
                       ))}
                     </div>
                   </div>
@@ -151,7 +152,7 @@ export default async function KelolaSoalPage({ params }: { params: Promise<{ pel
             ) : (
               <div className="space-y-4">
                 {soals.map((soal, index) => (
-                  <SoalCard key={soal.id} soal={soal} index={index + 1} babId={bab.id} />
+                  <SoalCard key={soal.id} soal={soal} index={index + 1} babId={bab.id} pelajaranType={pelajaran.type} />
                 ))}
               </div>
             )
@@ -162,7 +163,7 @@ export default async function KelolaSoalPage({ params }: { params: Promise<{ pel
   );
 }
 
-function SoalCard({ soal, index, babId }: { soal: any, index: number, babId: string }) {
+function SoalCard({ soal, index, babId, pelajaranType }: { soal: any, index: number, babId: string, pelajaranType: string }) {
   return (
     <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm">
       <div className="flex justify-between items-start gap-3 mb-3">
@@ -187,7 +188,10 @@ function SoalCard({ soal, index, babId }: { soal: any, index: number, babId: str
             </div>
           </div>
         </div>
-        <DeleteSoalButton soalId={soal.id} babId={babId} />
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <EditSoalModal soal={soal} pelajaranType={pelajaranType} />
+          <DeleteSoalButton soalId={soal.id} babId={babId} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 ml-0 sm:ml-9">
@@ -202,7 +206,11 @@ function SoalCard({ soal, index, babId }: { soal: any, index: number, babId: str
           >
             <span className="font-bold w-4">{opt}.</span>
             <span className="flex-1 break-words">{soal[`option${opt}`]}</span>
-            {soal.correctOption === opt && <span className="ml-auto text-green-700 font-bold">✓</span>}
+            {soal.correctOption === opt && (
+              <svg className="w-4 h-4 ml-auto text-green-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
           </div>
         ))}
       </div>

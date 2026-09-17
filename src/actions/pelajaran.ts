@@ -20,6 +20,31 @@ export async function createPelajaran(formData: FormData) {
   });
 
   revalidatePath("/dashboard/admin/bank-soal");
+  revalidatePath("/dashboard/ujian");
+}
+
+export async function updatePelajaran(id: string, formData: FormData) {
+  const name = formData.get("name") as string;
+  const description = (formData.get("description") as string) || null;
+  const status = (formData.get("status") as string) || "PUBLISHED";
+  const order = parseInt(formData.get("order") as string, 10);
+
+  if (!name) throw new Error("Nama pelajaran wajib diisi.");
+
+  await prisma.pelajaran.update({
+    where: { id },
+    data: {
+      name,
+      description,
+      status: status as any,
+      ...(isNaN(order) ? {} : { order }),
+    },
+  });
+
+  revalidatePath("/dashboard/admin/bank-soal");
+  revalidatePath(`/dashboard/admin/bank-soal/${id}`);
+  revalidatePath("/dashboard/ujian");
+  return { success: true };
 }
 
 export async function deletePelajaran(id: string) {
@@ -29,6 +54,7 @@ export async function deletePelajaran(id: string) {
 
   await prisma.pelajaran.delete({ where: { id } });
   revalidatePath("/dashboard/admin/bank-soal");
+  revalidatePath("/dashboard/ujian");
 }
 
 export async function togglePelajaranStatus(id: string) {
@@ -40,4 +66,6 @@ export async function togglePelajaranStatus(id: string) {
     data: { status: p.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED" },
   });
   revalidatePath("/dashboard/admin/bank-soal");
+  revalidatePath(`/dashboard/admin/bank-soal/${id}`);
+  revalidatePath("/dashboard/ujian");
 }

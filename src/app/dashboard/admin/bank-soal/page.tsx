@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { EXAM_TYPE_LABELS, EXAM_TYPE_COLORS, PUBLISH_STATUS_LABELS, PUBLISH_STATUS_COLORS } from '@/constants/exam';
 import { createPelajaran } from '@/actions/pelajaran';
 import Link from 'next/link';
+import EditPelajaranModal from '@/components/admin/EditPelajaranModal';
+import DeletePelajaranButton from '@/components/admin/DeletePelajaranButton';
 
 export default async function BankSoalPage() {
   await requireRole('SUPERADMIN', 'GURU');
@@ -29,36 +31,65 @@ export default async function BankSoalPage() {
           const typeLabel = EXAM_TYPE_LABELS[p.type] || p.type;
           
           return (
-            <Link 
+            <div 
               key={p.id} 
-              href={`/dashboard/admin/bank-soal/${p.id}`}
-              className="block p-5 sm:p-6 rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary/30"
+              className="p-5 sm:p-6 rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-md hover:border-primary/30 flex flex-col justify-between"
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                  </svg>
+              <div>
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                    <EditPelajaranModal
+                      pelajaran={{
+                        id: p.id,
+                        name: p.name,
+                        description: p.description,
+                        status: p.status as any,
+                        order: p.order,
+                      }}
+                    />
+                    {!p.isDefault && (
+                      <DeletePelajaranButton id={p.id} name={p.name} />
+                    )}
+                    {!p.isDefault && p.status && (
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${PUBLISH_STATUS_COLORS[p.status]}`}>
+                        {PUBLISH_STATUS_LABELS[p.status]}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                {!p.isDefault && p.status && (
-                  <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${PUBLISH_STATUS_COLORS[p.status]}`}>
-                    {PUBLISH_STATUS_LABELS[p.status]}
-                  </span>
+
+                <Link href={`/dashboard/admin/bank-soal/${p.id}`} className="group block">
+                  <h2 className="text-lg sm:text-xl font-bold mb-2 text-gray-900 group-hover:text-primary transition-colors">
+                    {p.name}
+                  </h2>
+                </Link>
+                {p.description && (
+                  <p className="text-sm text-gray-500 mb-4 line-clamp-2">{p.description}</p>
                 )}
               </div>
-              <h2 className="text-lg sm:text-xl font-bold mb-2 text-gray-900">{p.name}</h2>
-              {p.description && (
-                <p className="text-sm text-gray-500 mb-4 line-clamp-2">{p.description}</p>
-              )}
-              <div className="flex justify-between items-center text-xs font-semibold pt-2 border-t border-gray-50">
-                <span className={`px-2.5 py-1 rounded-full ${typeColor}`}>
-                  {typeLabel}
-                </span>
-                <span className="text-gray-500 bg-gray-50 px-2.5 py-1 rounded-full">
-                  {p._count.babs} Ujian/Bab
-                </span>
+
+              <div className="pt-4 border-t border-gray-50 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-semibold">
+                  <span className={`px-2.5 py-0.5 rounded-full ${typeColor}`}>
+                    {typeLabel}
+                  </span>
+                  <span className="text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full">
+                    {p._count.babs} {p.type === 'BAB' ? 'Bab' : 'Ujian'}
+                  </span>
+                </div>
+                <Link
+                  href={`/dashboard/admin/bank-soal/${p.id}`}
+                  className="text-xs font-semibold text-primary hover:text-primary-hover transition-colors inline-flex items-center gap-1"
+                >
+                  Kelola &rarr;
+                </Link>
               </div>
-            </Link>
+            </div>
           );
         })}
 
@@ -73,7 +104,7 @@ export default async function BankSoalPage() {
             <input 
               type="text" 
               name="name" 
-              placeholder="Nama Pelajaran (mis. N4 Choukai)"
+              placeholder="Nama Pelajaran (mis. Minna no Nihongo 2)"
               required
               className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:border-primary focus:ring-primary bg-white"
             />

@@ -3,6 +3,7 @@
 import { deleteUser, resetPassword } from "@/actions/users";
 import { useState } from "react";
 import type { UserRow } from "@/types";
+import EditUserModal from "@/components/admin/EditUserModal";
 
 export default function UserTable({ users, currentUserId }: { users: UserRow[]; currentUserId: string }) {
   const [resetId, setResetId] = useState<string | null>(null);
@@ -67,10 +68,11 @@ export default function UserTable({ users, currentUserId }: { users: UserRow[]; 
                   </span>
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-right text-sm space-x-2 whitespace-nowrap">
+                  <EditUserModal user={user} />
                   {user.id !== currentUserId && (
                     <>
                       {resetId === user.id ? (
-                        <span className="inline-flex items-center space-x-2">
+                        <span className="inline-flex items-center space-x-2 ml-2">
                           <input 
                             type="text" 
                             value={newPass} 
@@ -83,7 +85,7 @@ export default function UserTable({ users, currentUserId }: { users: UserRow[]; 
                         </span>
                       ) : (
                         <>
-                          <button onClick={() => setResetId(user.id)} className="text-primary hover:text-primary-hover font-medium text-xs sm:text-sm">
+                          <button onClick={() => setResetId(user.id)} className="text-gray-600 hover:text-gray-900 font-medium text-xs sm:text-sm">
                             Reset PW
                           </button>
                           <button onClick={() => handleDelete(user.id, user.name)} className="text-red-600 hover:text-red-700 font-medium text-xs sm:text-sm">

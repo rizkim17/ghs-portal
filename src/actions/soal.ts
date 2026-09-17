@@ -29,6 +29,45 @@ export async function createSoal(formData: FormData) {
   revalidatePath(`/dashboard/admin/bank-soal/${bab?.pelajaranId}/${babId}`);
 }
 
+export async function updateSoal(soalId: string, formData: FormData) {
+  const questionText = formData.get("questionText") as string;
+  const optionA = formData.get("optionA") as string;
+  const optionB = formData.get("optionB") as string;
+  const optionC = formData.get("optionC") as string;
+  const optionD = formData.get("optionD") as string;
+  const correctOption = formData.get("correctOption") as string;
+  const section = (formData.get("section") as string) || "GENERAL";
+  const audioUrl = (formData.get("audioUrl") as string) || null;
+  const imageUrl = (formData.get("imageUrl") as string) || null;
+  const explanation = (formData.get("explanation") as string) || null;
+
+  if (!questionText || !optionA || !optionB || !optionC || !optionD || !correctOption) {
+    throw new Error("Semua field teks dan opsi soal wajib diisi.");
+  }
+
+  const soal = await prisma.soal.update({
+    where: { id: soalId },
+    data: {
+      questionText,
+      optionA,
+      optionB,
+      optionC,
+      optionD,
+      correctOption,
+      section: section as any,
+      audioUrl,
+      imageUrl,
+      explanation,
+    },
+    include: {
+      bab: { select: { id: true, pelajaranId: true } },
+    },
+  });
+
+  revalidatePath(`/dashboard/admin/bank-soal/${soal.bab.pelajaranId}/${soal.bab.id}`);
+  return { success: true };
+}
+
 export async function deleteSoal(soalId: string, babId: string) {
   const bab = await prisma.bab.findUnique({ where: { id: babId }, select: { pelajaranId: true } });
   await prisma.soal.delete({ where: { id: soalId } });
