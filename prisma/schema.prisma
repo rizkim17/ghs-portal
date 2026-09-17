@@ -6,11 +6,45 @@ datasource db {
   provider = "postgresql"
 }
 
+// ── Enums ───────────────────────────────────────────────────
+
 enum Role {
-  ADMIN
+  SUPERADMIN
   GURU
   SISWA
 }
+
+enum ExamType {
+  JFT   // Ujian JFT-Basic CBT (4 seksi, skor 250)
+  SSW   // Ujian Skill SSW Tokutei Ginou (skor 100)
+  BAB   // Pelajaran berbasis bab (MNN, Irodori, Kana, dll)
+}
+
+enum PublishStatus {
+  PUBLISHED  // Terlihat oleh siswa
+  DRAFT      // Hanya admin/guru
+}
+
+enum SSWSector {
+  NONE
+  KAIGO
+  INSHOKURYOHIN_SEIZO
+  GAISHOKU
+  NOGYO
+  KENSETSU
+}
+
+enum SectionType {
+  GENERAL
+  JFT_MOJI_KOTOBA
+  JFT_KAIWA_HYOUGEN
+  JFT_CHOUKAI
+  JFT_DOKKAI
+  SSW_GAKKA
+  SSW_JITSUGI
+}
+
+// ── Models ──────────────────────────────────────────────────
 
 model User {
   id            String       @id @default(cuid())
@@ -26,43 +60,73 @@ model User {
   biodata       Biodata?
 }
 
+/// Container utama — JFT, SSW, atau Pelajaran (MNN, Irodori, dll)
+model Pelajaran {
+  id          String        @id @default(cuid())
+  type        ExamType
+  name        String        // "JFT", "SSW", "Minna no Nihongo 1"
+  description String?
+  isDefault   Boolean       @default(false) // true untuk JFT & SSW bawaan
+  status      PublishStatus @default(PUBLISHED)
+  order       Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  babs        Bab[]
+}
+
+/// Bab (untuk BAB) atau Ujian individual (untuk JFT/SSW)
 model Bab {
-  id            String       @id @default(cuid())
-  title         String       // Misalnya: "Bab 1: Hiragana & Katakana"
-  description   String?
-  order         Int          // Urutan bab untuk unlock (1, 2, 3...)
-  createdAt     DateTime     @default(now())
-  
-  soal          Soal[]
-  nilaiUjian    NilaiUjian[]
+  id              String        @id @default(cuid())
+  pelajaranId     String
+  title           String
+  description     String?
+  order           Int
+  maxSoalShown    Int           @default(20)  // Random soal yg ditampilkan (per-seksi untuk JFT)
+  durationMinutes Int           @default(0)   // 0 = tanpa timer
+  passingScore    Int           @default(70)
+  maxScore        Int           @default(100)
+  sswSector       SSWSector     @default(NONE)
+  status          PublishStatus @default(PUBLISHED)
+  createdAt       DateTime      @default(now())
+
+  pelajaran       Pelajaran     @relation(fields: [pelajaranId], references: [id], onDelete: Cascade)
+  soal            Soal[]
+  nilaiUjian      NilaiUjian[]
 }
 
 model Soal {
-  id            String   @id @default(cuid())
+  id            String       @id @default(cuid())
   babId         String
-  questionText  String   @db.Text
+  section       SectionType  @default(GENERAL)
+  questionText  String       @db.Text
+  audioUrl      String?
+  imageUrl      String?
   optionA       String
   optionB       String
   optionC       String
   optionD       String
-  correctOption String   // "A", "B", "C", atau "D"
-  createdAt     DateTime @default(now())
-  
-  bab           Bab      @relation(fields: [babId], references: [id], onDelete: Cascade)
+  correctOption String
+  explanation   String?      @db.Text
+  createdAt     DateTime     @default(now())
+
+  bab           Bab          @relation(fields: [babId], references: [id], onDelete: Cascade)
 }
 
 model NilaiUjian {
-  id            String   @id @default(cuid())
-  userId        String
-  babId         String
-  score         Int      // Nilai dari 0 - 100
-  isPassed      Boolean  @default(false)
-  createdAt     DateTime @default(now())
+  id               String   @id @default(cuid())
+  userId           String
+  babId            String
+  score            Int
+  isPassed         Boolean  @default(false)
+  timeSpentSeconds Int?
+  sectionScores    Json?
+  createdAt        DateTime @default(now())
 
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bab           Bab      @relation(fields: [babId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, babId]) // Siswa hanya punya 1 nilai per bab (bisa diupdate jika remidi)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bab              Bab      @relation(fields: [babId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, babId])
 }
 
 model Biodata {
@@ -72,16 +136,14 @@ model Biodata {
   fullNameKatakana String?
   placeOfBirth     String?
   dateOfBirth      DateTime?
-  gender           String?  // "L" / "P"
+  gender           String?
   bloodType        String?
   height           Int?
   weight           Int?
   address          String?  @db.Text
   phone            String?
-  
-  educationHistory Json?    // Array of { level, schoolName, startYear, endYear }
-  workExperience   Json?    // Array of { companyName, position, startYear, endYear }
-  
+  educationHistory Json?
+  workExperience   Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
