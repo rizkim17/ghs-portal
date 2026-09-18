@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import ImageLibraryModal from "@/components/admin/ImageLibraryModal";
 
 type MediaUploaderProps = {
   type: "image" | "audio";
   fileInputName: string;
   removeInputName?: string;
+  existingUrlInputName?: string;
   currentUrl?: string | null;
   label?: string;
   hint?: string;
@@ -15,6 +17,7 @@ export default function MediaUploader({
   type,
   fileInputName,
   removeInputName,
+  existingUrlInputName = "imageUrl",
   currentUrl,
   label,
   hint,
@@ -24,9 +27,11 @@ export default function MediaUploader({
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [vpsImageUrl, setVpsImageUrl] = useState<string | null>(null);
   const [isRemoved, setIsRemoved] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
   const acceptedTypes = isImage
     ? "image/jpeg,image/png,image/webp,image/gif"
@@ -57,7 +62,20 @@ export default function MediaUploader({
     const objectUrl = URL.createObjectURL(file);
     setSelectedFile(file);
     setPreviewUrl(objectUrl);
+    setVpsImageUrl(null);
     setIsRemoved(false);
+  };
+
+  const handleSelectFromLibrary = (url: string) => {
+    if (previewUrl && previewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setVpsImageUrl(url);
+    setIsRemoved(false);
+    setErrorMessage("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,6 +114,7 @@ export default function MediaUploader({
     }
     setSelectedFile(null);
     setPreviewUrl(null);
+    setVpsImageUrl(null);
     setErrorMessage("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -114,8 +133,10 @@ export default function MediaUploader({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const hasActiveFile = (selectedFile && previewUrl) || (currentUrl && !isRemoved);
-  const activeUrl = selectedFile && previewUrl ? previewUrl : currentUrl;
+  const hasActiveFile = Boolean((selectedFile && previewUrl) || vpsImageUrl || (currentUrl && !isRemoved));
+  const activeUrl = selectedFile && previewUrl ? previewUrl : vpsImageUrl ? vpsImageUrl : currentUrl;
+
+  const currentVpsValue = vpsImageUrl || (!selectedFile && !isRemoved && currentUrl ? currentUrl : "");
 
   return (
     <div className="space-y-1">
@@ -137,6 +158,13 @@ export default function MediaUploader({
         onChange={handleFileChange}
         className="hidden"
       />
+      {isImage && (
+        <input
+          type="hidden"
+          name={existingUrlInputName}
+          value={currentVpsValue}
+        />
+      )}
       {removeInputName && (
         <input
           type="hidden"
@@ -181,7 +209,7 @@ export default function MediaUploader({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <p className="text-xs font-medium text-gray-900 truncate">
-                  {selectedFile ? selectedFile.name : isImage ? "Gambar Terlampir" : "Audio Terlampir"}
+                  {selectedFile ? selectedFile.name : vpsImageUrl ? vpsImageUrl.split("/").pop() : isImage ? "Gambar Terlampir" : "Audio Terlampir"}
                 </p>
                 {selectedFile && (
                   <span className="text-[10px] text-gray-400 shrink-0">
@@ -198,11 +226,21 @@ export default function MediaUploader({
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
+            {isImage && (
+              <button
+                type="button"
+                onClick={() => setIsLibraryOpen(true)}
+                className="px-2 py-1 text-xs font-medium text-gray-700 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                title="Pilih dari Galeri VPS"
+              >
+                VPS
+              </button>
+            )}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
-              title="Ganti File"
+              className="px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
+              title="Ganti File Baru dari Perangkat"
             >
               Ganti
             </button>
@@ -252,10 +290,35 @@ export default function MediaUploader({
             </span>
           </div>
 
-          <span className="text-xs font-semibold text-primary hover:underline shrink-0">
-            Pilih
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isImage && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsLibraryOpen(true);
+                }}
+                className="px-2.5 py-1 text-xs font-semibold text-gray-700 hover:text-primary hover:bg-primary/10 rounded-lg border border-gray-200 transition-colors"
+              >
+                Galeri VPS
+              </button>
+            )}
+            <span className="text-xs font-semibold text-primary hover:underline">
+              Pilih
+            </span>
+          </div>
         </div>
+      )}
+
+      {/* Modal Galeri VPS */}
+      {isImage && (
+        <ImageLibraryModal
+          isOpen={isLibraryOpen}
+          onClose={() => setIsLibraryOpen(false)}
+          onSelect={handleSelectFromLibrary}
+          currentSelectedUrl={vpsImageUrl}
+          title={label ? `Galeri VPS — ${label}` : "Galeri Gambar VPS"}
+        />
       )}
     </div>
   );

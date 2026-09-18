@@ -1,8 +1,101 @@
 "use server";
 
+import fs from "fs";
+import path from "path";
 import { prisma } from "@/lib/prisma";
-import { saveUploadedFile, deleteUploadedFile } from "@/lib/storage";
+import { saveUploadedFile, deleteUploadedFile, getVpsStoredFiles, StoredMediaItem } from "@/lib/storage";
 import { revalidatePath } from "next/cache";
+
+/**
+ * Menghapus file fisik dari VPS HANYA JIKA file tersebut sudah tidak digunakan oleh soal manapun
+ */
+async function safeDeleteUploadedFile(fileUrl: string | null | undefined, excludeSoalId?: string) {
+  if (!fileUrl || !fileUrl.startsWith("/uploads/")) return;
+  try {
+    const inUse = await prisma.soal.findFirst({
+      where: {
+        AND: [
+          excludeSoalId ? { id: { not: excludeSoalId } } : {},
+          {
+            OR: [
+              { imageUrl: fileUrl },
+              { audioUrl: fileUrl },
+              { optionAImage: fileUrl },
+              { optionBImage: fileUrl },
+              { optionCImage: fileUrl },
+              { optionDImage: fileUrl },
+            ],
+          },
+        ],
+      },
+      select: { id: true },
+    });
+
+    if (inUse) {
+      // Masih digunakan oleh soal lain, jangan hapus fisiknya dari disk VPS!
+      return;
+    }
+
+    await deleteUploadedFile(fileUrl);
+  } catch (err) {
+    console.error("Gagal memeriksa penggunaan file sebelum menghapus:", err);
+  }
+}
+
+/**
+ * Mengambil daftar gambar yang tersimpan di disk VPS
+ */
+export async function fetchVpsImages(): Promise<StoredMediaItem[]> {
+  return await getVpsStoredFiles("images");
+}
+
+/**
+ * Upload gambar langsung ke VPS untuk digunakan di galeri
+ */
+export async function uploadVpsImageDirect(formData: FormData): Promise<StoredMediaItem> {
+  const file = formData.get("file") as File | null;
+  if (!file || !(file instanceof File) || file.size === 0) {
+    throw new Error("File gambar tidak ditemukan.");
+  }
+  const url = await saveUploadedFile(file, "images");
+  const filename = path.basename(url);
+  const fullPath = path.join(process.cwd(), "public", "uploads", "soal", "images", filename);
+  const stats = await fs.promises.stat(fullPath);
+  return {
+    url,
+    filename,
+    size: stats.size,
+    updatedAt: stats.mtime.toISOString(),
+  };
+}
+
+/**
+ * Hapus gambar dari galeri VPS jika tidak sedang dipakai oleh soal
+ */
+export async function deleteVpsImage(imageUrl: string) {
+  if (!imageUrl || !imageUrl.startsWith("/uploads/soal/images/")) {
+    throw new Error("URL gambar tidak valid.");
+  }
+  const inUse = await prisma.soal.findFirst({
+    where: {
+      OR: [
+        { imageUrl },
+        { optionAImage: imageUrl },
+        { optionBImage: imageUrl },
+        { optionCImage: imageUrl },
+        { optionDImage: imageUrl },
+      ],
+    },
+    select: { id: true },
+  });
+
+  if (inUse) {
+    throw new Error("Gambar ini sedang digunakan oleh soal lain dan tidak dapat dihapus dari server.");
+  }
+
+  await deleteUploadedFile(imageUrl);
+  return { success: true };
+}
 
 export async function createSoal(formData: FormData) {
   const babId = formData.get("babId") as string;
@@ -137,21 +230,28 @@ export async function updateSoal(soalId: string, formData: FormData) {
   let finalImageUrl = existingSoal.imageUrl;
   let finalAudioUrl = existingSoal.audioUrl;
 
+  const selectedExistingImageUrl = (formData.get("imageUrl") as string) || null;
+
   if (removeImage) {
-    if (existingSoal.imageUrl) await deleteUploadedFile(existingSoal.imageUrl);
+    if (existingSoal.imageUrl) await safeDeleteUploadedFile(existingSoal.imageUrl, soalId);
     finalImageUrl = null;
   } else if (imageFile && imageFile.size > 0) {
     const uploadedPath = await saveUploadedFile(imageFile, "images");
-    if (existingSoal.imageUrl) await deleteUploadedFile(existingSoal.imageUrl);
+    if (existingSoal.imageUrl && existingSoal.imageUrl !== uploadedPath) {
+      await safeDeleteUploadedFile(existingSoal.imageUrl, soalId);
+    }
     finalImageUrl = uploadedPath;
+  } else if (selectedExistingImageUrl && selectedExistingImageUrl !== existingSoal.imageUrl) {
+    if (existingSoal.imageUrl) await safeDeleteUploadedFile(existingSoal.imageUrl, soalId);
+    finalImageUrl = selectedExistingImageUrl;
   }
 
   if (removeAudio) {
-    if (existingSoal.audioUrl) await deleteUploadedFile(existingSoal.audioUrl);
+    if (existingSoal.audioUrl) await safeDeleteUploadedFile(existingSoal.audioUrl, soalId);
     finalAudioUrl = null;
   } else if (audioFile && audioFile.size > 0) {
     const uploadedPath = await saveUploadedFile(audioFile, "audio");
-    if (existingSoal.audioUrl) await deleteUploadedFile(existingSoal.audioUrl);
+    if (existingSoal.audioUrl) await safeDeleteUploadedFile(existingSoal.audioUrl, soalId);
     finalAudioUrl = uploadedPath;
   }
 
@@ -169,16 +269,21 @@ export async function updateSoal(soalId: string, formData: FormData) {
   ) => {
     const shouldRemove = formData.get(removeKey) === "true";
     const file = formData.get(fileKey) as File | null;
+    const selectedExistingUrl = (formData.get(optKey) as string) || null;
     const oldUrl = existingSoal[optKey];
 
     if (shouldRemove) {
-      if (oldUrl) await deleteUploadedFile(oldUrl);
+      if (oldUrl) await safeDeleteUploadedFile(oldUrl, soalId);
       return null;
     }
     if (file && file.size > 0) {
       const newUrl = await saveUploadedFile(file, "images");
-      if (oldUrl) await deleteUploadedFile(oldUrl);
+      if (oldUrl && oldUrl !== newUrl) await safeDeleteUploadedFile(oldUrl, soalId);
       return newUrl;
+    }
+    if (selectedExistingUrl && selectedExistingUrl !== oldUrl) {
+      if (oldUrl) await safeDeleteUploadedFile(oldUrl, soalId);
+      return selectedExistingUrl;
     }
     return oldUrl;
   };
@@ -209,12 +314,12 @@ export async function updateSoal(soalId: string, formData: FormData) {
     throw new Error(`Kunci jawaban benar (${correctOption}) harus merupakan salah satu pilihan yang aktif (${activeOptions.join(", ")}).`);
   }
 
-  // Jika opsi C atau D dinonaktifkan / dihapus sama sekali, bersihkan file gambarnya di disk
+  // Jika opsi C atau D dinonaktifkan / dihapus sama sekali, bersihkan file gambarnya di disk jika tidak dipakai soal lain
   if (!hasOptionC && existingSoal.optionCImage) {
-    await deleteUploadedFile(existingSoal.optionCImage);
+    await safeDeleteUploadedFile(existingSoal.optionCImage, soalId);
   }
   if (!hasOptionD && existingSoal.optionDImage) {
-    await deleteUploadedFile(existingSoal.optionDImage);
+    await safeDeleteUploadedFile(existingSoal.optionDImage, soalId);
   }
 
   await prisma.soal.update({
@@ -257,13 +362,13 @@ export async function deleteSoal(soalId: string, babId: string) {
   });
 
   if (existingSoal) {
-    // Hapus file fisik di VPS
-    if (existingSoal.imageUrl) await deleteUploadedFile(existingSoal.imageUrl);
-    if (existingSoal.audioUrl) await deleteUploadedFile(existingSoal.audioUrl);
-    if (existingSoal.optionAImage) await deleteUploadedFile(existingSoal.optionAImage);
-    if (existingSoal.optionBImage) await deleteUploadedFile(existingSoal.optionBImage);
-    if (existingSoal.optionCImage) await deleteUploadedFile(existingSoal.optionCImage);
-    if (existingSoal.optionDImage) await deleteUploadedFile(existingSoal.optionDImage);
+    // Hapus file fisik di VPS jika tidak sedang digunakan oleh soal lain
+    if (existingSoal.imageUrl) await safeDeleteUploadedFile(existingSoal.imageUrl, soalId);
+    if (existingSoal.audioUrl) await safeDeleteUploadedFile(existingSoal.audioUrl, soalId);
+    if (existingSoal.optionAImage) await safeDeleteUploadedFile(existingSoal.optionAImage, soalId);
+    if (existingSoal.optionBImage) await safeDeleteUploadedFile(existingSoal.optionBImage, soalId);
+    if (existingSoal.optionCImage) await safeDeleteUploadedFile(existingSoal.optionCImage, soalId);
+    if (existingSoal.optionDImage) await safeDeleteUploadedFile(existingSoal.optionDImage, soalId);
   }
 
   const bab = await prisma.bab.findUnique({ where: { id: babId }, select: { pelajaranId: true } });

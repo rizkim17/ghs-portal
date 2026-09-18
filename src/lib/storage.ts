@@ -110,3 +110,53 @@ export async function deleteUploadedFile(fileUrl?: string | null): Promise<void>
     console.error("Gagal menghapus file lama dari VPS:", err);
   }
 }
+
+export type StoredMediaItem = {
+  url: string;
+  filename: string;
+  size: number;
+  updatedAt: string;
+};
+
+/**
+ * Mengambil daftar file yang sudah tersimpan di VPS pada folder type ('images' | 'audio')
+ */
+export async function getVpsStoredFiles(type: "images" | "audio"): Promise<StoredMediaItem[]> {
+  try {
+    const targetDir = path.join(UPLOAD_ROOT, type);
+    if (!fs.existsSync(targetDir)) {
+      await fs.promises.mkdir(targetDir, { recursive: true });
+      return [];
+    }
+
+    const files = await fs.promises.readdir(targetDir);
+    const validExtensions =
+      type === "images"
+        ? [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"]
+        : [".mp3", ".wav", ".m4a", ".aac", ".ogg", ".webm"];
+
+    const items: StoredMediaItem[] = [];
+
+    for (const file of files) {
+      if (file === ".gitkeep") continue;
+      const ext = path.extname(file).toLowerCase();
+      if (validExtensions.includes(ext)) {
+        const fullPath = path.join(targetDir, file);
+        const stats = await fs.promises.stat(fullPath);
+        items.push({
+          url: `/uploads/soal/${type}/${file}`,
+          filename: file,
+          size: stats.size,
+          updatedAt: stats.mtime.toISOString(),
+        });
+      }
+    }
+
+    // Urutkan dari yang terbaru
+    items.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    return items;
+  } catch (err) {
+    console.error(`Gagal membaca file ${type} dari VPS:`, err);
+    return [];
+  }
+}

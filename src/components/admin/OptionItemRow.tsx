@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import ImageLibraryModal from "@/components/admin/ImageLibraryModal";
 
 type OptionItemRowProps = {
   label: "A" | "B" | "C" | "D";
@@ -31,7 +32,9 @@ export default function OptionItemRow({
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [vpsImageUrl, setVpsImageUrl] = useState<string | null>(null);
   const [isImageRemoved, setIsImageRemoved] = useState(false);
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -49,8 +52,20 @@ export default function OptionItemRow({
       }
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
+      setVpsImageUrl(null);
       setIsImageRemoved(false);
     }
+  };
+
+  const handleSelectFromLibrary = (url: string) => {
+    if (previewUrl && previewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setVpsImageUrl(url);
+    setIsImageRemoved(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const removeImage = () => {
@@ -59,13 +74,23 @@ export default function OptionItemRow({
     }
     setSelectedFile(null);
     setPreviewUrl(null);
+    setVpsImageUrl(null);
     setIsImageRemoved(true);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  const activeImageUrl = selectedFile && previewUrl ? previewUrl : !isImageRemoved ? initialImageUrl : null;
+  const activeImageUrl =
+    selectedFile && previewUrl
+      ? previewUrl
+      : vpsImageUrl
+      ? vpsImageUrl
+      : !isImageRemoved
+      ? initialImageUrl
+      : null;
+
+  const currentVpsValue = vpsImageUrl || (!selectedFile && !isImageRemoved && initialImageUrl ? initialImageUrl : "");
 
   return (
     <div className={`p-2 sm:p-2.5 rounded-xl border transition-all ${
@@ -79,6 +104,11 @@ export default function OptionItemRow({
         accept="image/jpeg,image/png,image/webp,image/gif"
         onChange={handleFileChange}
         className="hidden"
+      />
+      <input
+        type="hidden"
+        name={`option${label}Image`}
+        value={currentVpsValue}
       />
       <input
         type="hidden"
@@ -141,19 +171,44 @@ export default function OptionItemRow({
             </button>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="p-1.5 sm:px-2.5 sm:py-1.5 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg border border-dashed border-gray-300 hover:border-primary text-xs flex items-center gap-1 shrink-0 transition-colors"
-            title={`Lampirkan gambar untuk pilihan ${label}`}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="hidden sm:inline text-[11px] font-medium">+ Gambar</span>
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Tombol Pilih dari Galeri VPS */}
+            <button
+              type="button"
+              onClick={() => setIsLibraryOpen(true)}
+              className="p-1.5 sm:px-2 sm:py-1.5 text-gray-600 hover:text-primary hover:bg-primary/5 rounded-lg border border-gray-200 hover:border-primary text-xs flex items-center gap-1 transition-colors"
+              title={`Pilih gambar yang sudah ada di VPS untuk pilihan ${label}`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="hidden sm:inline text-[11px] font-medium">VPS</span>
+            </button>
+
+            {/* Tombol Unggah Langsung dari Komputer */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-1.5 sm:px-2 sm:py-1.5 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg border border-dashed border-gray-300 hover:border-primary text-xs flex items-center gap-1 transition-colors"
+              title={`Unggah gambar baru dari perangkat untuk pilihan ${label}`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <span className="hidden sm:inline text-[11px] font-medium">+ Unggah</span>
+            </button>
+          </div>
         )}
       </div>
+
+      {/* Modal Galeri VPS */}
+      <ImageLibraryModal
+        isOpen={isLibraryOpen}
+        onClose={() => setIsLibraryOpen(false)}
+        onSelect={handleSelectFromLibrary}
+        currentSelectedUrl={vpsImageUrl}
+        title={`Galeri VPS — Pilihan ${label}`}
+      />
     </div>
   );
 }

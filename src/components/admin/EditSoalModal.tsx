@@ -60,10 +60,15 @@ export default function EditSoalModal({
     const remC = formData.get("removeOptionCImage") === "true";
     const remD = formData.get("removeOptionDImage") === "true";
 
-    const hasA = optA.length > 0 || (optAImg && optAImg.size > 0) || (!!soal.optionAImage && !remA);
-    const hasB = optB.length > 0 || (optBImg && optBImg.size > 0) || (!!soal.optionBImage && !remB);
-    const hasC = optC.length > 0 || (optCImg && optCImg.size > 0) || (!!soal.optionCImage && !remC);
-    const hasD = optD.length > 0 || (optDImg && optDImg.size > 0) || (!!soal.optionDImage && !remD);
+    const optAUrl = (formData.get("optionAImage") as string) || "";
+    const optBUrl = (formData.get("optionBImage") as string) || "";
+    const optCUrl = (formData.get("optionCImage") as string) || "";
+    const optDUrl = (formData.get("optionDImage") as string) || "";
+
+    const hasA = optA.length > 0 || (optAImg && optAImg.size > 0) || (optAUrl.length > 0 && !remA);
+    const hasB = optB.length > 0 || (optBImg && optBImg.size > 0) || (optBUrl.length > 0 && !remB);
+    const hasC = optC.length > 0 || (optCImg && optCImg.size > 0) || (optCUrl.length > 0 && !remC);
+    const hasD = optD.length > 0 || (optDImg && optDImg.size > 0) || (optDUrl.length > 0 && !remD);
 
     if (!hasA || !hasB) {
       setError("Pilihan A dan B wajib diisi (berupa teks atau gambar).");
