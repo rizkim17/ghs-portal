@@ -10,12 +10,19 @@ export async function createPelajaran(formData: FormData) {
 
   if (!name) throw new Error("Nama pelajaran wajib diisi.");
 
+  const maxOrderPelajaran = await prisma.pelajaran.findFirst({
+    orderBy: { order: "desc" },
+    select: { order: true },
+  });
+  const nextOrder = Math.max(2, maxOrderPelajaran?.order || 2) + 1;
+
   await prisma.pelajaran.create({
     data: {
       name,
       type: type as any,
       description,
       isDefault: false,
+      order: nextOrder,
     },
   });
 

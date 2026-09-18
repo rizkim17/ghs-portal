@@ -15,7 +15,28 @@ export default async function BankSoalPage() {
         select: { babs: true }
       }
     },
-    orderBy: { order: 'asc' }
+    orderBy: [
+      { order: 'asc' },
+      { createdAt: 'asc' }
+    ]
+  });
+
+  // Urutan tampilan: JFT nomor 1, SSW nomor 2, lalu bank soal lainnya (terbaru di dekat tombol tambah)
+  const sortedPelajarans = [...pelajarans].sort((a, b) => {
+    // JFT selalu paling pertama
+    if (a.type === 'JFT' && b.type !== 'JFT') return -1;
+    if (b.type === 'JFT' && a.type !== 'JFT') return 1;
+
+    // SSW selalu kedua
+    if (a.type === 'SSW' && b.type !== 'SSW') return -1;
+    if (b.type === 'SSW' && a.type !== 'SSW') return 1;
+
+    // Bank soal custom lainnya
+    if (a.order !== b.order) {
+      return a.order - b.order;
+    }
+
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
 
   return (
@@ -26,7 +47,7 @@ export default async function BankSoalPage() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {pelajarans.map((p) => {
+        {sortedPelajarans.map((p) => {
           const typeColor = EXAM_TYPE_COLORS[p.type] || 'bg-gray-100 text-gray-800';
           const typeLabel = EXAM_TYPE_LABELS[p.type] || p.type;
           
