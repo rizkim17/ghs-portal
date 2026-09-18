@@ -54,6 +54,7 @@ export async function createSoal(formData: FormData) {
 
   revalidatePath(`/dashboard/admin/bank-soal/${bab?.pelajaranId}/${babId}`);
   revalidatePath(`/dashboard/ujian/${babId}`);
+  return { success: true };
 }
 
 export async function updateSoal(soalId: string, formData: FormData) {
