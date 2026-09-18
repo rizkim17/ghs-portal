@@ -32,7 +32,7 @@ export default function OptionItemRow({
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [vpsImageUrl, setVpsImageUrl] = useState<string | null>(null);
+  const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
   const [isImageRemoved, setIsImageRemoved] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
@@ -52,7 +52,7 @@ export default function OptionItemRow({
       }
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
-      setVpsImageUrl(null);
+      setSavedImageUrl(null);
       setIsImageRemoved(false);
     }
   };
@@ -63,7 +63,7 @@ export default function OptionItemRow({
     }
     setSelectedFile(null);
     setPreviewUrl(null);
-    setVpsImageUrl(url);
+    setSavedImageUrl(url);
     setIsImageRemoved(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -74,7 +74,7 @@ export default function OptionItemRow({
     }
     setSelectedFile(null);
     setPreviewUrl(null);
-    setVpsImageUrl(null);
+    setSavedImageUrl(null);
     setIsImageRemoved(true);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -84,13 +84,13 @@ export default function OptionItemRow({
   const activeImageUrl =
     selectedFile && previewUrl
       ? previewUrl
-      : vpsImageUrl
-      ? vpsImageUrl
+      : savedImageUrl
+      ? savedImageUrl
       : !isImageRemoved
       ? initialImageUrl
       : null;
 
-  const currentVpsValue = vpsImageUrl || (!selectedFile && !isImageRemoved && initialImageUrl ? initialImageUrl : "");
+  const currentSavedValue = savedImageUrl || (!selectedFile && !isImageRemoved && initialImageUrl ? initialImageUrl : "");
 
   return (
     <div className={`p-2 sm:p-2.5 rounded-xl border transition-all ${
@@ -108,7 +108,7 @@ export default function OptionItemRow({
       <input
         type="hidden"
         name={`option${label}Image`}
-        value={currentVpsValue}
+        value={currentSavedValue}
       />
       <input
         type="hidden"
@@ -172,24 +172,24 @@ export default function OptionItemRow({
           </div>
         ) : (
           <div className="flex items-center gap-1 shrink-0">
-            {/* Tombol Pilih dari Galeri VPS */}
+            {/* Tombol Pilih Gambar yang Sudah Diunggah */}
             <button
               type="button"
               onClick={() => setIsLibraryOpen(true)}
-              className="p-1.5 sm:px-2 sm:py-1.5 text-gray-600 hover:text-primary hover:bg-primary/5 rounded-lg border border-gray-200 hover:border-primary text-xs flex items-center gap-1 transition-colors"
-              title={`Pilih gambar yang sudah ada di VPS untuk pilihan ${label}`}
+              className="p-1.5 sm:px-2.5 sm:py-1.5 text-gray-700 hover:text-primary hover:bg-primary/5 rounded-lg border border-gray-200 hover:border-primary text-xs flex items-center gap-1 transition-colors"
+              title={`Pilih gambar yang sudah diunggah untuk pilihan ${label}`}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className="hidden sm:inline text-[11px] font-medium">VPS</span>
+              <span className="hidden sm:inline text-[11px] font-medium">Pilih</span>
             </button>
 
             {/* Tombol Unggah Langsung dari Komputer */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-1.5 sm:px-2 sm:py-1.5 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg border border-dashed border-gray-300 hover:border-primary text-xs flex items-center gap-1 transition-colors"
+              className="p-1.5 sm:px-2.5 sm:py-1.5 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg border border-dashed border-gray-300 hover:border-primary text-xs flex items-center gap-1 transition-colors"
               title={`Unggah gambar baru dari perangkat untuk pilihan ${label}`}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,13 +201,13 @@ export default function OptionItemRow({
         )}
       </div>
 
-      {/* Modal Galeri VPS */}
+      {/* Modal Galeri Gambar Tersimpan */}
       <ImageLibraryModal
         isOpen={isLibraryOpen}
         onClose={() => setIsLibraryOpen(false)}
         onSelect={handleSelectFromLibrary}
-        currentSelectedUrl={vpsImageUrl}
-        title={`Galeri VPS — Pilihan ${label}`}
+        currentSelectedUrl={savedImageUrl}
+        title={`Pilih Gambar — Pilihan ${label}`}
       />
     </div>
   );

@@ -43,23 +43,23 @@ async function safeDeleteUploadedFile(fileUrl: string | null | undefined, exclud
 }
 
 /**
- * Mengambil daftar gambar yang tersimpan di disk VPS
+ * Mengambil daftar media (gambar atau audio) yang sudah tersimpan di server
  */
-export async function fetchVpsImages(): Promise<StoredMediaItem[]> {
-  return await getVpsStoredFiles("images");
+export async function fetchUploadedMedia(type: "images" | "audio"): Promise<StoredMediaItem[]> {
+  return await getVpsStoredFiles(type);
 }
 
 /**
- * Upload gambar langsung ke VPS untuk digunakan di galeri
+ * Upload media langsung ke server
  */
-export async function uploadVpsImageDirect(formData: FormData): Promise<StoredMediaItem> {
+export async function uploadMediaDirect(formData: FormData, type: "images" | "audio"): Promise<StoredMediaItem> {
   const file = formData.get("file") as File | null;
   if (!file || !(file instanceof File) || file.size === 0) {
-    throw new Error("File gambar tidak ditemukan.");
+    throw new Error(`File ${type === "images" ? "gambar" : "audio"} tidak ditemukan.`);
   }
-  const url = await saveUploadedFile(file, "images");
+  const url = await saveUploadedFile(file, type);
   const filename = path.basename(url);
-  const fullPath = path.join(process.cwd(), "public", "uploads", "soal", "images", filename);
+  const fullPath = path.join(process.cwd(), "public", "uploads", "soal", type, filename);
   const stats = await fs.promises.stat(fullPath);
   return {
     url,
@@ -70,31 +70,45 @@ export async function uploadVpsImageDirect(formData: FormData): Promise<StoredMe
 }
 
 /**
- * Hapus gambar dari galeri VPS jika tidak sedang dipakai oleh soal
+ * Hapus media dari server jika tidak sedang dipakai oleh soal manapun
  */
-export async function deleteVpsImage(imageUrl: string) {
-  if (!imageUrl || !imageUrl.startsWith("/uploads/soal/images/")) {
-    throw new Error("URL gambar tidak valid.");
+export async function deleteUploadedMediaItem(url: string) {
+  if (!url || !url.startsWith("/uploads/soal/")) {
+    throw new Error("URL file tidak valid.");
   }
   const inUse = await prisma.soal.findFirst({
     where: {
       OR: [
-        { imageUrl },
-        { optionAImage: imageUrl },
-        { optionBImage: imageUrl },
-        { optionCImage: imageUrl },
-        { optionDImage: imageUrl },
+        { imageUrl: url },
+        { audioUrl: url },
+        { optionAImage: url },
+        { optionBImage: url },
+        { optionCImage: url },
+        { optionDImage: url },
       ],
     },
     select: { id: true },
   });
 
   if (inUse) {
-    throw new Error("Gambar ini sedang digunakan oleh soal lain dan tidak dapat dihapus dari server.");
+    throw new Error("File ini sedang digunakan oleh soal lain dan tidak dapat dihapus.");
   }
 
-  await deleteUploadedFile(imageUrl);
+  await deleteUploadedFile(url);
   return { success: true };
+}
+
+// Backward-compatible wrappers
+export async function fetchVpsImages(): Promise<StoredMediaItem[]> {
+  return await fetchUploadedMedia("images");
+}
+
+export async function uploadVpsImageDirect(formData: FormData): Promise<StoredMediaItem> {
+  return await uploadMediaDirect(formData, "images");
+}
+
+export async function deleteVpsImage(imageUrl: string) {
+  return await deleteUploadedMediaItem(imageUrl);
 }
 
 export async function createSoal(formData: FormData) {
@@ -246,13 +260,20 @@ export async function updateSoal(soalId: string, formData: FormData) {
     finalImageUrl = selectedExistingImageUrl;
   }
 
+  const selectedExistingAudioUrl = (formData.get("audioUrl") as string) || null;
+
   if (removeAudio) {
     if (existingSoal.audioUrl) await safeDeleteUploadedFile(existingSoal.audioUrl, soalId);
     finalAudioUrl = null;
   } else if (audioFile && audioFile.size > 0) {
     const uploadedPath = await saveUploadedFile(audioFile, "audio");
-    if (existingSoal.audioUrl) await safeDeleteUploadedFile(existingSoal.audioUrl, soalId);
+    if (existingSoal.audioUrl && existingSoal.audioUrl !== uploadedPath) {
+      await safeDeleteUploadedFile(existingSoal.audioUrl, soalId);
+    }
     finalAudioUrl = uploadedPath;
+  } else if (selectedExistingAudioUrl && selectedExistingAudioUrl !== existingSoal.audioUrl) {
+    if (existingSoal.audioUrl) await safeDeleteUploadedFile(existingSoal.audioUrl, soalId);
+    finalAudioUrl = selectedExistingAudioUrl;
   }
 
   // Handle teks opsi

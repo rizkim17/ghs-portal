@@ -85,7 +85,7 @@ export default async function KelolaSoalPage({ params }: { params: Promise<{ pel
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-1">Belum Ada Soal</h3>
             <p className="text-sm text-gray-500 max-w-md mx-auto mb-6">
-              Ujian ini belum memiliki butir soal. Klik tombol di bawah untuk membuat dan mengunggah soal beserta media ke VPS.
+              Ujian ini belum memiliki butir soal. Klik tombol di bawah untuk mulai membuat soal.
             </p>
             <Link
               href={`/dashboard/admin/bank-soal/${pelajaranId}/${babId}/tambah`}
