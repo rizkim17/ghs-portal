@@ -69,6 +69,10 @@ export async function createSoal(formData: FormData) {
     throw new Error("Minimal harus ada 2 pilihan jawaban (Pilihan A dan B wajib memiliki teks atau gambar).");
   }
 
+  if (hasOptionD && !hasOptionC) {
+    throw new Error("Pilihan C harus diisi jika ingin menggunakan pilihan D (pilihan jawaban berurutan A, B, C, D).");
+  }
+
   const activeOptions = ["A", "B"];
   if (hasOptionC) activeOptions.push("C");
   if (hasOptionD) activeOptions.push("D");
@@ -191,6 +195,10 @@ export async function updateSoal(soalId: string, formData: FormData) {
 
   if (!hasOptionA || !hasOptionB) {
     throw new Error("Minimal harus ada 2 pilihan jawaban (Pilihan A dan B wajib memiliki teks atau gambar).");
+  }
+
+  if (hasOptionD && !hasOptionC) {
+    throw new Error("Pilihan C harus diisi jika ingin menggunakan pilihan D (pilihan jawaban berurutan A, B, C, D).");
   }
 
   const activeOptions = ["A", "B"];

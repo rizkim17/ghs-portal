@@ -26,32 +26,11 @@ export default function TambahSoalForm({
   const [stayOnPage, setStayOnPage] = useState(false);
   const [formKey, setFormKey] = useState(0);
 
-  // Jumlah pilihan ganda dinamis (minimal A & B, maksimal A, B, C, D)
-  const [activeOptions, setActiveOptions] = useState<Array<"A" | "B" | "C" | "D">>(["A", "B", "C", "D"]);
   const [correctOption, setCorrectOption] = useState<"A" | "B" | "C" | "D">("A");
 
   const isJFT = pelajaranType === "JFT";
   const isSSW = pelajaranType === "SSW";
   const isCBT = isJFT || isSSW;
-
-  const handleAddOption = () => {
-    if (activeOptions.length === 2) {
-      setActiveOptions(["A", "B", "C"]);
-    } else if (activeOptions.length === 3) {
-      setActiveOptions(["A", "B", "C", "D"]);
-    }
-  };
-
-  const handleRemoveOption = (opt: "C" | "D") => {
-    if (opt === "D") {
-      setActiveOptions((prev) => prev.filter((o) => o !== "D") as any);
-      if (correctOption === "D") setCorrectOption("A");
-    } else if (opt === "C") {
-      // Jika C dihapus, maka D juga harus dihapus agar urutan tetap konsisten A, B
-      setActiveOptions(["A", "B"]);
-      if (correctOption === "C" || correctOption === "D") setCorrectOption("A");
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -60,6 +39,45 @@ export default function TambahSoalForm({
     setSuccessMessage("");
 
     const formData = new FormData(e.currentTarget);
+
+    // Validasi opsi sebelum submit
+    const optA = ((formData.get("optionA") as string) || "").trim();
+    const optB = ((formData.get("optionB") as string) || "").trim();
+    const optC = ((formData.get("optionC") as string) || "").trim();
+    const optD = ((formData.get("optionD") as string) || "").trim();
+    const optAImg = formData.get("optionAImageFile") as File | null;
+    const optBImg = formData.get("optionBImageFile") as File | null;
+    const optCImg = formData.get("optionCImageFile") as File | null;
+    const optDImg = formData.get("optionDImageFile") as File | null;
+
+    const hasA = optA.length > 0 || (optAImg && optAImg.size > 0);
+    const hasB = optB.length > 0 || (optBImg && optBImg.size > 0);
+    const hasC = optC.length > 0 || (optCImg && optCImg.size > 0);
+    const hasD = optD.length > 0 || (optDImg && optDImg.size > 0);
+
+    if (!hasA || !hasB) {
+      setError("Pilihan A dan B wajib diisi (berupa teks atau gambar).");
+      setLoading(false);
+      return;
+    }
+
+    if (hasD && !hasC) {
+      setError("Pilihan C harus diisi terlebih dahulu jika ingin menggunakan pilihan D.");
+      setLoading(false);
+      return;
+    }
+
+    if (correctOption === "C" && !hasC) {
+      setError("Pilihan C dipilih sebagai kunci jawaban, tetapi pilihan C belum diisi.");
+      setLoading(false);
+      return;
+    }
+
+    if (correctOption === "D" && !hasD) {
+      setError("Pilihan D dipilih sebagai kunci jawaban, tetapi pilihan D belum diisi.");
+      setLoading(false);
+      return;
+    }
 
     try {
       await createSoal(formData);
@@ -158,7 +176,7 @@ export default function TambahSoalForm({
         </div>
       )}
 
-      {/* Pilihan Jawaban Fleksibel (2 - 4 Opsi) dengan Gambar Opsi */}
+      {/* Pilihan Jawaban (A & B Wajib, C & D Opsional) */}
       <div className="space-y-2.5 pt-2 border-t border-gray-100">
         <div className="flex items-center justify-between">
           <div>
@@ -166,44 +184,38 @@ export default function TambahSoalForm({
               Pilihan Jawaban & Kunci Benar <span className="text-red-500">*</span>
             </label>
             <p className="text-[11px] text-gray-400">
-              Pilih lingkaran untuk kunci benar. Lampirkan gambar jika pilihan berupa ilustrasi.
+              Pilih lingkaran untuk kunci benar. Kosongkan pilihan C atau D jika soal hanya memiliki 2 atau 3 pilihan.
             </p>
           </div>
 
-          <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-            {activeOptions.length} Pilihan
+          <span className="text-[11px] font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md shrink-0">
+            A & B Wajib &bull; C & D Opsional
           </span>
         </div>
 
         <div className="space-y-2">
-          {activeOptions.map((opt) => (
+          {(["A", "B", "C", "D"] as const).map((opt) => (
             <OptionItemRow
               key={opt}
               label={opt}
               isCorrect={correctOption === opt}
               onSelectCorrect={() => setCorrectOption(opt)}
-              canDelete={opt === "C" || opt === "D"}
-              onDelete={opt === "C" || opt === "D" ? () => handleRemoveOption(opt) : undefined}
+              isOptional={opt === "C" || opt === "D"}
+              placeholder={
+                opt === "A"
+                  ? "Teks pilihan A (wajib jika tanpa gambar)"
+                  : opt === "B"
+                  ? "Teks pilihan B (wajib jika tanpa gambar)"
+                  : opt === "C"
+                  ? "Teks pilihan C (opsional)"
+                  : "Teks pilihan D (opsional, kosongkan jika 2 atau 3 pilihan)"
+              }
               textInputName={`option${opt}`}
               imageInputName={`option${opt}ImageFile`}
               removeImageInputName={`removeOption${opt}Image`}
             />
           ))}
         </div>
-
-        {/* Tombol Tambah Opsi C / D jika kurang dari 4 */}
-        {activeOptions.length < 4 && (
-          <button
-            type="button"
-            onClick={handleAddOption}
-            className="w-full py-2 border border-dashed border-gray-300 hover:border-primary hover:bg-primary/5 rounded-xl text-xs font-semibold text-primary inline-flex items-center justify-center gap-1.5 transition-colors"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Tambah Pilihan {activeOptions.length === 2 ? "C" : "D"}</span>
-          </button>
-        )}
       </div>
 
       {/* Penjelasan (Opsional) */}

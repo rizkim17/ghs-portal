@@ -8,8 +8,8 @@ type OptionItemRowProps = {
   initialImageUrl?: string | null;
   isCorrect: boolean;
   onSelectCorrect: () => void;
-  canDelete?: boolean;
-  onDelete?: () => void;
+  placeholder?: string;
+  isOptional?: boolean;
   textInputName: string;
   imageInputName: string;
   removeImageInputName: string;
@@ -21,8 +21,8 @@ export default function OptionItemRow({
   initialImageUrl = null,
   isCorrect,
   onSelectCorrect,
-  canDelete = false,
-  onDelete,
+  placeholder,
+  isOptional = false,
   textInputName,
   imageInputName,
   removeImageInputName,
@@ -107,13 +107,20 @@ export default function OptionItemRow({
         </label>
 
         {/* Input Teks Pilihan */}
-        <input
-          type="text"
-          name={textInputName}
-          defaultValue={defaultValue}
-          placeholder={`Teks pilihan ${label} (opsional jika ada gambar)`}
-          className="flex-1 min-w-0 px-2.5 py-1.5 text-xs sm:text-sm border border-gray-200 rounded-lg focus:border-primary focus:ring-primary bg-transparent text-gray-900"
-        />
+        <div className="flex-1 min-w-0 relative">
+          <input
+            type="text"
+            name={textInputName}
+            defaultValue={defaultValue}
+            placeholder={
+              placeholder ||
+              (isOptional
+                ? `Teks pilihan ${label} (opsional)`
+                : `Teks pilihan ${label} (wajib jika tanpa gambar)`)
+            }
+            className="w-full px-2.5 py-1.5 text-xs sm:text-sm border border-gray-200 rounded-lg focus:border-primary focus:ring-primary bg-transparent text-gray-900 placeholder:text-gray-400"
+          />
+        </div>
 
         {/* Tombol Lampirkan Gambar / Thumbnail Preview */}
         {activeImageUrl ? (
@@ -137,27 +144,13 @@ export default function OptionItemRow({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="p-1.5 sm:px-2 sm:py-1.5 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg border border-dashed border-gray-300 hover:border-primary text-xs flex items-center gap-1 shrink-0 transition-colors"
+            className="p-1.5 sm:px-2.5 sm:py-1.5 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg border border-dashed border-gray-300 hover:border-primary text-xs flex items-center gap-1 shrink-0 transition-colors"
             title={`Lampirkan gambar untuk pilihan ${label}`}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <span className="hidden sm:inline text-[11px] font-medium">+ Gambar</span>
-          </button>
-        )}
-
-        {/* Tombol Hapus Opsi (khusus C & D) */}
-        {canDelete && onDelete && (
-          <button
-            type="button"
-            onClick={onDelete}
-            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg shrink-0 transition-colors"
-            title={`Hapus pilihan ${label}`}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
           </button>
         )}
       </div>
