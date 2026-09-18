@@ -146,43 +146,49 @@ export default function EditSoalModal({
                 />
               )}
 
-              <div className="space-y-3 bg-gray-50 p-3.5 sm:p-4 rounded-xl border border-gray-100">
-                <h4 className="font-semibold text-xs uppercase tracking-wider text-gray-500">Pilihan Jawaban</h4>
-                {[
-                  { opt: "A", val: soal.optionA },
-                  { opt: "B", val: soal.optionB },
-                  { opt: "C", val: soal.optionC },
-                  { opt: "D", val: soal.optionD },
-                ].map(({ opt, val }) => (
-                  <div key={opt} className="flex gap-2 items-center">
-                    <span className="font-bold text-xs w-5 text-gray-600">{opt}.</span>
-                    <input
-                      type="text"
-                      name={`option${opt}`}
-                      required
-                      defaultValue={val}
-                      className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:border-primary focus:ring-primary"
-                      placeholder={`Opsi ${opt}`}
-                    />
-                  </div>
-                ))}
-              </div>
+              <div className="space-y-2 pt-1 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-gray-700">
+                    Pilihan Jawaban & Kunci Benar <span className="text-red-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-gray-400">
+                    Klik radio pada opsi yang benar
+                  </span>
+                </div>
 
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                  Kunci Jawaban Benar *
-                </label>
-                <select
-                  name="correctOption"
-                  required
-                  defaultValue={soal.correctOption}
-                  className="w-full px-3 py-2 border border-green-200 rounded-xl bg-green-50 text-green-900 font-bold text-sm focus:ring-2 focus:ring-green-500"
-                >
-                  <option value="A">A</option>
-                  <option value="B">B</option>
-                  <option value="C">C</option>
-                  <option value="D">D</option>
-                </select>
+                <div className="space-y-2">
+                  {[
+                    { opt: "A", val: soal.optionA },
+                    { opt: "B", val: soal.optionB },
+                    { opt: "C", val: soal.optionC },
+                    { opt: "D", val: soal.optionD },
+                  ].map(({ opt, val }) => (
+                    <div
+                      key={opt}
+                      className="flex items-center gap-2 bg-gray-50/50 hover:bg-gray-50 p-1.5 pr-2.5 rounded-xl border border-gray-200 focus-within:border-primary transition-colors"
+                    >
+                      <label className="flex items-center gap-1.5 pl-2 cursor-pointer select-none shrink-0" title="Pilih sebagai kunci benar">
+                        <input
+                          type="radio"
+                          name="correctOption"
+                          value={opt}
+                          defaultChecked={soal.correctOption === opt}
+                          required
+                          className="w-4 h-4 text-primary focus:ring-primary cursor-pointer"
+                        />
+                        <span className="font-bold text-xs text-gray-700 w-4">{opt}.</span>
+                      </label>
+                      <input
+                        type="text"
+                        name={`option${opt}`}
+                        required
+                        defaultValue={val}
+                        placeholder={`Pilihan ${opt}`}
+                        className="flex-1 px-2.5 py-1.5 text-sm bg-transparent border-0 focus:outline-none focus:ring-0 text-gray-900"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div>

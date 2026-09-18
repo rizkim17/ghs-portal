@@ -39,7 +39,7 @@ export default async function TambahSoalPage({
   const { pelajaran } = bab;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-5 max-w-2xl mx-auto">
       {/* Header & Navigasi Kembali */}
       <div>
         <Link
@@ -69,7 +69,7 @@ export default async function TambahSoalPage({
       </div>
 
       {/* Formulir Input Soal */}
-      <div className="bg-white p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm">
+      <div className="bg-white p-5 sm:p-7 rounded-2xl border border-gray-100 shadow-sm">
         <TambahSoalForm
           babId={bab.id}
           pelajaranId={pelajaranId}
