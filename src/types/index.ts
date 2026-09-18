@@ -6,10 +6,14 @@
 export type SoalClient = {
   id: string;
   questionText: string;
-  optionA: string;
-  optionB: string;
-  optionC: string;
-  optionD: string;
+  optionA?: string | null;
+  optionB?: string | null;
+  optionC?: string | null;
+  optionD?: string | null;
+  optionAImage?: string | null;
+  optionBImage?: string | null;
+  optionCImage?: string | null;
+  optionDImage?: string | null;
   section: string;
   audioUrl?: string | null;
   imageUrl?: string | null;

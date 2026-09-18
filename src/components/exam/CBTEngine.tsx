@@ -279,24 +279,38 @@ export default function CBTEngine({
 
           <div className="space-y-2.5 sm:space-y-3">
             {[
-              { key: 'A', text: currentSoal.optionA },
-              { key: 'B', text: currentSoal.optionB },
-              { key: 'C', text: currentSoal.optionC },
-              { key: 'D', text: currentSoal.optionD },
-            ].map((opt) => (
-              <button
-                key={opt.key}
-                onClick={() => handleOptionSelect(currentSoal.id, opt.key)}
-                className={`w-full text-left p-3 sm:p-4 rounded-xl border-2 transition-all flex items-start text-sm sm:text-base ${
-                  answers[currentSoal.id] === opt.key
-                    ? 'border-primary bg-primary/5 text-primary font-medium'
-                    : 'border-gray-100 hover:border-gray-300 bg-white text-gray-700'
-                }`}
-              >
-                <span className="font-bold mr-3 w-5">{opt.key}.</span>
-                <span className="break-words flex-1">{opt.text}</span>
-              </button>
-            ))}
+              { key: 'A', text: currentSoal.optionA, image: currentSoal.optionAImage },
+              { key: 'B', text: currentSoal.optionB, image: currentSoal.optionBImage },
+              { key: 'C', text: currentSoal.optionC, image: currentSoal.optionCImage },
+              { key: 'D', text: currentSoal.optionD, image: currentSoal.optionDImage },
+            ]
+              .filter((opt) => opt.text || opt.image)
+              .map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => handleOptionSelect(currentSoal.id, opt.key)}
+                  className={`w-full text-left p-3 sm:p-4 rounded-xl border-2 transition-all flex items-start gap-3 text-sm sm:text-base ${
+                    answers[currentSoal.id] === opt.key
+                      ? 'border-primary bg-primary/5 text-primary font-medium'
+                      : 'border-gray-100 hover:border-gray-300 bg-white text-gray-700'
+                  }`}
+                >
+                  <span className="font-bold w-5 shrink-0 pt-0.5">{opt.key}.</span>
+                  <div className="flex-1 space-y-2">
+                    {opt.image && (
+                      <div>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={opt.image}
+                          alt={`Pilihan ${opt.key}`}
+                          className="max-h-36 sm:max-h-48 rounded-lg border border-gray-200 object-contain bg-white"
+                        />
+                      </div>
+                    )}
+                    {opt.text && <span className="break-words block">{opt.text}</span>}
+                  </div>
+                </button>
+              ))}
           </div>
         </div>
       )}

@@ -179,24 +179,38 @@ function SoalCard({ soal, index, babId, pelajaranType }: { soal: any, index: num
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-4 ml-0 sm:ml-11">
-        {['A', 'B', 'C', 'D'].map((opt) => (
-          <div 
-            key={opt} 
-            className={`p-2.5 sm:p-3 rounded-xl border text-xs sm:text-sm flex gap-2.5 items-center ${
-              soal.correctOption === opt 
-                ? 'bg-green-50 border-green-400 text-green-900 font-medium' 
-                : 'bg-gray-50 border-gray-100 text-gray-700'
-            }`}
-          >
-            <span className="font-bold w-4 text-center">{opt}.</span>
-            <span className="flex-1 break-words">{soal[`option${opt}`]}</span>
-            {soal.correctOption === opt && (
-              <svg className="w-4 h-4 ml-auto text-green-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-              </svg>
-            )}
-          </div>
-        ))}
+        {['A', 'B', 'C', 'D'].map((opt) => {
+          const optText = soal[`option${opt}`];
+          const optImage = soal[`option${opt}Image`];
+          if (!optText && !optImage) return null;
+
+          return (
+            <div 
+              key={opt} 
+              className={`p-2.5 sm:p-3 rounded-xl border text-xs sm:text-sm flex gap-2.5 items-center ${
+                soal.correctOption === opt 
+                  ? 'bg-green-50 border-green-400 text-green-900 font-medium' 
+                  : 'bg-gray-50 border-gray-100 text-gray-700'
+              }`}
+            >
+              <span className="font-bold w-4 text-center shrink-0">{opt}.</span>
+              {optImage && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={optImage}
+                  alt={`Gambar pilihan ${opt}`}
+                  className="w-12 h-12 object-cover rounded-lg border border-gray-200 bg-white shrink-0"
+                />
+              )}
+              {optText && <span className="flex-1 break-words">{optText}</span>}
+              {soal.correctOption === opt && (
+                <svg className="w-4 h-4 ml-auto text-green-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {soal.explanation && (

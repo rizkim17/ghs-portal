@@ -27,7 +27,21 @@ export default async function UjianBabPage({ params }: { params: Promise<{ babId
   // Ambil semua soal (tanpa correctOption)
   const allSoal = await prisma.soal.findMany({
     where: { babId },
-    select: { id: true, questionText: true, optionA: true, optionB: true, optionC: true, optionD: true, section: true, audioUrl: true, imageUrl: true },
+    select: {
+      id: true,
+      questionText: true,
+      optionA: true,
+      optionB: true,
+      optionC: true,
+      optionD: true,
+      optionAImage: true,
+      optionBImage: true,
+      optionCImage: true,
+      optionDImage: true,
+      section: true,
+      audioUrl: true,
+      imageUrl: true,
+    },
   });
 
   if (allSoal.length === 0) {

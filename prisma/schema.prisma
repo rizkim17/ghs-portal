@@ -102,10 +102,14 @@ model Soal {
   questionText  String       @db.Text
   audioUrl      String?
   imageUrl      String?
-  optionA       String
-  optionB       String
-  optionC       String
-  optionD       String
+  optionA       String?
+  optionB       String?
+  optionC       String?
+  optionD       String?
+  optionAImage  String?
+  optionBImage  String?
+  optionCImage  String?
+  optionDImage  String?
   correctOption String
   explanation   String?      @db.Text
   createdAt     DateTime     @default(now())
