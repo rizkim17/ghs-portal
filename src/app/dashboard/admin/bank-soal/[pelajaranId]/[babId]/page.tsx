@@ -5,6 +5,7 @@ import { SECTION_TYPE_LABELS } from '@/constants/exam';
 import Link from 'next/link';
 import DeleteSoalButton from '@/components/admin/DeleteSoalButton';
 import EditSoalModal from '@/components/admin/EditSoalModal';
+import MediaUploader from '@/components/admin/MediaUploader';
 
 export default async function KelolaSoalPage({ params }: { params: Promise<{ pelajaranId: string; babId: string }> }) {
   await requireRole('SUPERADMIN', 'GURU');
@@ -75,17 +76,21 @@ export default async function KelolaSoalPage({ params }: { params: Promise<{ pel
             </div>
 
             {(pelajaran.type === 'JFT' || pelajaran.type === 'SSW') && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">URL Gambar (Opsional)</label>
-                <input type="url" name="imageUrl" className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:border-primary focus:ring-primary" placeholder="https://..." />
-              </div>
+              <MediaUploader
+                type="image"
+                fileInputName="imageFile"
+                label="Gambar Soal (Opsional)"
+                hint="Disimpan di VPS"
+              />
             )}
 
             {pelajaran.type === 'JFT' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">URL Audio (Opsional, untuk Choukai)</label>
-                <input type="url" name="audioUrl" className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:border-primary focus:ring-primary" placeholder="https://..." />
-              </div>
+              <MediaUploader
+                type="audio"
+                fileInputName="audioFile"
+                label="Audio Choukai (Opsional)"
+                hint="Disimpan di VPS"
+              />
             )}
 
             <div className="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -176,16 +181,31 @@ function SoalCard({ soal, index, babId, pelajaranType }: { soal: any, index: num
             
             <div className="flex flex-wrap gap-2 mt-2">
               {soal.imageUrl && (
-                <span className="inline-flex items-center gap-1 bg-primary/5 text-primary px-2 py-0.5 rounded-md text-xs">
+                <span className="inline-flex items-center gap-1 bg-primary/5 text-primary px-2 py-0.5 rounded-md text-xs font-medium">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> Gambar
                 </span>
               )}
               {soal.audioUrl && (
-                <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md text-xs">
+                <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md text-xs font-medium">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg> Audio
                 </span>
               )}
             </div>
+
+            {soal.imageUrl && (
+              <div className="mt-2.5 max-w-xs sm:max-w-sm">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={soal.imageUrl} alt="Gambar soal" className="max-h-40 rounded-xl border border-gray-200 object-contain bg-gray-50" />
+              </div>
+            )}
+
+            {soal.audioUrl && (
+              <div className="mt-2.5 max-w-sm sm:max-w-md">
+                <audio controls className="w-full h-8">
+                  <source src={soal.audioUrl} />
+                </audio>
+              </div>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { updateSoal } from "@/actions/soal";
 import { SECTION_TYPE_LABELS } from "@/constants/exam";
+import MediaUploader from "@/components/admin/MediaUploader";
 
 type SoalProps = {
   id: string;
@@ -124,33 +125,25 @@ export default function EditSoalModal({
               </div>
 
               {isCBT && (
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                    URL Gambar (Opsional)
-                  </label>
-                  <input
-                    type="url"
-                    name="imageUrl"
-                    defaultValue={soal.imageUrl || ""}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:border-primary focus:ring-primary"
-                    placeholder="https://..."
-                  />
-                </div>
+                <MediaUploader
+                  type="image"
+                  fileInputName="imageFile"
+                  removeInputName="removeImage"
+                  currentUrl={soal.imageUrl}
+                  label="Gambar Soal (Opsional)"
+                  hint="Disimpan di VPS"
+                />
               )}
 
               {isJFT && (
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                    URL Audio (Opsional, untuk Choukai)
-                  </label>
-                  <input
-                    type="url"
-                    name="audioUrl"
-                    defaultValue={soal.audioUrl || ""}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:border-primary focus:ring-primary"
-                    placeholder="https://..."
-                  />
-                </div>
+                <MediaUploader
+                  type="audio"
+                  fileInputName="audioFile"
+                  removeInputName="removeAudio"
+                  currentUrl={soal.audioUrl}
+                  label="Audio Choukai (Opsional)"
+                  hint="Disimpan di VPS"
+                />
               )}
 
               <div className="space-y-3 bg-gray-50 p-3.5 sm:p-4 rounded-xl border border-gray-100">

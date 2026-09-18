@@ -41,3 +41,9 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# uploaded media files on VPS / local
+/public/uploads/soal/images/*
+!/public/uploads/soal/images/.gitkeep
+/public/uploads/soal/audio/*
+!/public/uploads/soal/audio/.gitkeep

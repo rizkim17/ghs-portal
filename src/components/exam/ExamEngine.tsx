@@ -115,6 +115,21 @@ export default function ExamEngine({
               </div>
             )}
 
+            {soal.audioUrl && (
+              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-xl max-w-md">
+                <p className="text-xs font-medium text-gray-700 mb-1.5 flex items-center gap-1">
+                  <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                  Audio Soal
+                </p>
+                <audio controls className="w-full h-8">
+                  <source src={soal.audioUrl} />
+                  Browser Anda tidak mendukung pemutar audio.
+                </audio>
+              </div>
+            )}
+
             <div className="space-y-2.5 sm:space-y-3">
               {[
                 { key: 'A', text: soal.optionA },
